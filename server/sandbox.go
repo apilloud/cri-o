@@ -15,6 +15,7 @@ import (
 	"golang.org/x/sys/unix"
 	"k8s.io/apimachinery/pkg/fields"
 	pb "k8s.io/kubernetes/pkg/kubelet/api/v1alpha1/runtime"
+	"k8s.io/kubernetes/pkg/kubelet/network/hostport"
 )
 
 type sandboxNetNs struct {
@@ -146,6 +147,7 @@ type sandbox struct {
 	trusted        bool
 	resolvPath     string
 	hostname       string
+	portMappings   []*hostport.PortMapping
 }
 
 const (

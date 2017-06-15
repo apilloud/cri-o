@@ -8,6 +8,7 @@ import (
 	"github.com/kubernetes-incubator/cri-o/oci"
 	"golang.org/x/net/context"
 	pb "k8s.io/kubernetes/pkg/kubelet/api/v1alpha1/runtime"
+	"k8s.io/kubernetes/pkg/kubelet/network/hostport"
 )
 
 // StopPodSandbox stops the sandbox. If there are any running containers in the
@@ -35,6 +36,15 @@ func (s *Server) StopPodSandbox(ctx context.Context, req *pb.StopPodSandboxReque
 		return nil, err
 	}
 	if _, err := os.Stat(netnsPath); err == nil {
+		if err2 := s.hostportManager.Remove(sb.id, &hostport.PodPortMapping{
+			Name:         sb.name,
+			PortMappings: sb.portMappings,
+			HostNetwork:  false,
+		}); err2 != nil {
+			return nil, fmt.Errorf("failed to remove hostport for container %s in sandbox %s: %v",
+				podInfraContainer.Name(), sb.id, err2)
+		}
+
 		if err2 := s.netPlugin.TearDownPod(netnsPath, sb.namespace, sb.kubeName, sb.id); err2 != nil {
 			logrus.Warnf("failed to destroy network for container %s in sandbox %s: %v",
 				podInfraContainer.Name(), sb.id, err2)
